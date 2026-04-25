@@ -1,0 +1,50 @@
+import os from "node:os";
+import path from "node:path";
+import fs from "node:fs/promises";
+
+export type Config = {
+  dbUrl: string;
+  currentUserName: string;
+};
+
+const CONFIG_JSON_PATH = "/.gatorconfig.json";
+
+export function setUser(userName: string) {
+  console.log(userName);
+}
+
+export function getConfigFilePath(): string {
+  return path.join(os.homedir(), CONFIG_JSON_PATH);
+}
+
+export async function writeConfig(cfg: Config) {
+  try {
+    await fs.writeFile(getConfigFilePath(), JSON.stringify(cfg, null, 2), {
+      encoding: "utf-8",
+    });
+  } catch (error) {}
+}
+
+export function validateConfig(rawConfig: any): Config {
+  const result = JSON.parse(rawConfig);
+
+  return {
+    dbUrl: result.dbUrl,
+    currentUserName: result.currentUserName,
+  } satisfies Config;
+}
+
+export async function readConfig() {
+  try {
+    const rawConfig = await fs.readFile(getConfigFilePath(), {
+      encoding: "utf-8",
+    });
+    const cfg = validateConfig(rawConfig);
+    return cfg;
+  } catch (error) {
+    return {
+      dbUrl: "",
+      currentUserName: "",
+    };
+  }
+}
