@@ -1,21 +1,40 @@
 import {
-  Config,
-  getConfigFilePath,
-  readConfig,
-  setUser,
-  writeConfig,
-} from "./config";
+  CommandsRegistry,
+  registerCommand,
+  runCommand,
+} from "./commands/commands";
+import { handlerLogin, handlerRegister, handlerReset } from "./commands/users";
 
 async function main() {
-  console.log(
-    await writeConfig({
-      dbUrl: "postgres://example",
-      currentUserName: "Zach",
-    }),
-  );
-  console.log("Hello, world!");
-  const currentConfig: Config = await readConfig();
-  console.log(currentConfig);
+  const args = process.argv.slice(2);
+
+  if (args.length < 1) {
+    console.error("usage: cli <command> [args...]");
+    process.exit(1);
+  }
+
+  const cmdName = args[0];
+  const cmdArgs = args.slice(1);
+  const commandsRegistry: CommandsRegistry = {};
+
+  registerCommand(commandsRegistry, "login", handlerLogin);
+  registerCommand(commandsRegistry, "register", handlerRegister);
+  registerCommand(commandsRegistry, "reset", handlerReset);
+
+  try {
+    await runCommand(commandsRegistry, cmdName, ...cmdArgs);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error(`Error running command ${cmdName}: ${err.message}`);
+    } else {
+      console.error(`Error running command ${cmdName}: ${err}`);
+    }
+
+    // exit on any errors
+    process.exit(1);
+  }
+
+  process.exit(0);
 }
 
 main();
