@@ -39,9 +39,6 @@ export async function markFeedFetched(feedId: string) {
   return firstOrUndefined(result);
 }
 
-// not fun, don't really care and don't want to even think about
-// TODO: verify this is working as expected
-//        should return a feed that is either null or the oldest date
 export async function getNextFeedToFetch() {
   const result = await db
     .select()

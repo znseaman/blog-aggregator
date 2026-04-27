@@ -9,8 +9,10 @@ import {
   markFeedFetched,
 } from "../lib/db/queries/feeds";
 import { createFeedFollow } from "../lib/db/queries/feed_follows";
+import { createPost, getPostsForUser } from "../lib/db/queries/posts";
 
 type RSSFeed = {
+  id?: string;
   channel: {
     title: string;
     link: string;
@@ -156,7 +158,8 @@ export async function scrapeFeeds() {
     return;
   }
   console.log(`Found a feed to fetch!`);
-  scrapeFeed(nextFeed);
+  let feedData = await scrapeFeed(nextFeed);
+  await savePosts(feedData);
 }
 
 export async function scrapeFeed(feed: Feed) {
@@ -166,6 +169,27 @@ export async function scrapeFeed(feed: Feed) {
   console.log(
     `Feed ${feed.name} collected, ${feedData.channel.item.length} posts found`,
   );
+
+  // add feed id to allow for saving to db later
+  feedData.id = feed.id;
+
+  return feedData;
+}
+
+export async function savePosts(feed: RSSFeed) {
+  if (!feed.id) {
+    throw new Error("Missing feed id for post");
+  }
+
+  for (const item of feed.channel.item) {
+    await createPost(
+      item.title,
+      item.link,
+      item.description,
+      new Date(item.pubDate),
+      feed.id,
+    );
+  }
 }
 
 export function parseDuration(durationStr: string): number {
@@ -202,4 +226,24 @@ function handleError(err: unknown) {
   console.error(
     `Error scraping feeds: ${err instanceof Error ? err.message : err}`,
   );
+}
+
+export async function handlerBrowse(
+  cmdName: string,
+  user: User,
+  ...args: string[]
+): Promise<void> {
+  if (args.length > 1) {
+    throw new Error(`usage: ${cmdName} <limit>`);
+  }
+
+  let limit = Number(args[0]) || 2;
+  const posts = await getPostsForUser(user.id, limit);
+
+  let postsString = `${user.name}'s latest posts:\n`;
+  for (let post of posts) {
+    postsString += `* ${post.publishedAt} - ${post.title} - ${post.description} - ${post.url}`;
+  }
+
+  console.log(postsString);
 }

@@ -8,7 +8,12 @@ import {
   handlerFollowing,
   handlerUnfollow,
 } from "./commands/feed_follows";
-import { handlerAddFeed, handlerAgg, handlerFeeds } from "./commands/rss";
+import {
+  handlerAddFeed,
+  handlerAgg,
+  handlerBrowse,
+  handlerFeeds,
+} from "./commands/rss";
 import {
   handlerUsers,
   handlerLogin,
@@ -54,6 +59,11 @@ async function main() {
     commandsRegistry,
     "unfollow",
     middlewareLoggedIn(handlerUnfollow),
+  );
+  registerCommand(
+    commandsRegistry,
+    "browse",
+    middlewareLoggedIn(handlerBrowse),
   );
 
   try {
