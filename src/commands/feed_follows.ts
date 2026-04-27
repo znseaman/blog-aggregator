@@ -1,6 +1,7 @@
 import { readConfig } from "../config";
 import {
   createFeedFollow,
+  deleteFeedFollow,
   getFeedFollowsForUser,
 } from "../lib/db/queries/feed_follows";
 import { getFeedByUrl } from "../lib/db/queries/feeds";
@@ -40,4 +41,24 @@ export async function handlerFollowing(_: string, user: User): Promise<void> {
   }
 
   console.log(followsList);
+}
+
+export async function handlerUnfollow(
+  cmdName: string,
+  user: User,
+  ...args: string[]
+): Promise<void> {
+  if (args.length !== 1) {
+    throw new Error(`usage: ${cmdName} <url>`);
+  }
+
+  const url = args[0];
+  const feed = await getFeedByUrl(url);
+  if (!feed) {
+    throw new Error(`Feed ${url} not found`);
+  }
+
+  await deleteFeedFollow(user.id, feed.id);
+
+  console.log(`${user.name} is successfully unfollowed ${feed.name}!`);
 }
