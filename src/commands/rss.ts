@@ -1,7 +1,13 @@
 import { XMLParser } from "fast-xml-parser";
 import { readConfig } from "../config";
 import { getUserByName, User } from "../lib/db/queries/users";
-import { createFeed, Feed, getFeeds } from "../lib/db/queries/feeds";
+import {
+  createFeed,
+  Feed,
+  getFeeds,
+  getNextFeedToFetch,
+  markFeedFetched,
+} from "../lib/db/queries/feeds";
 import { createFeedFollow } from "../lib/db/queries/feed_follows";
 
 type RSSFeed = {
@@ -79,10 +85,33 @@ export async function handlerAgg(
   cmdName: string,
   ...args: string[]
 ): Promise<void> {
-  const feedURL = "https://www.wagslane.dev/index.xml";
-  const rssFeed = await fetchFeed(feedURL);
+  if (args.length !== 1) {
+    throw new Error(`usage: ${cmdName} <time_between_reqs>`);
+  }
 
-  console.log(JSON.stringify(rssFeed, null, 2));
+  const timeArg = args[0];
+  const timeBetweenRequests = parseDuration(timeArg);
+  if (!timeBetweenRequests) {
+    throw new Error(
+      `invalid duration: ${timeArg} - use format 1h 30m 15s or 3500ms`,
+    );
+  }
+
+  console.log(`Collecting feeds every ${timeArg}...`);
+
+  scrapeFeeds().catch(handleError);
+
+  const interval = setInterval(() => {
+    scrapeFeeds().catch(handleError);
+  }, timeBetweenRequests);
+
+  await new Promise<void>((resolve) => {
+    process.on("SIGINT", () => {
+      console.log("Shutting down feed aggregator...");
+      clearInterval(interval);
+      resolve();
+    });
+  });
 }
 
 export async function handlerAddFeed(
@@ -118,4 +147,59 @@ export async function handlerFeeds(
   const feeds = await getFeeds();
 
   console.log(JSON.stringify(feeds, null, 2));
+}
+
+export async function scrapeFeeds() {
+  const nextFeed = await getNextFeedToFetch();
+  if (!nextFeed) {
+    console.log(`No feeds to fetch.`);
+    return;
+  }
+  console.log(`Found a feed to fetch!`);
+  scrapeFeed(nextFeed);
+}
+
+export async function scrapeFeed(feed: Feed) {
+  await markFeedFetched(feed.id);
+  const feedData = await fetchFeed(feed.url);
+
+  console.log(
+    `Feed ${feed.name} collected, ${feedData.channel.item.length} posts found`,
+  );
+}
+
+export function parseDuration(durationStr: string): number {
+  const regex = /^(\d+)(ms|s|m|h)$/;
+  const match = durationStr.match(regex);
+  if (!match) {
+    return 0;
+  }
+
+  if (match.length !== 3) return 0;
+
+  let number = Number(match[1]);
+  let multiplier = timeUnitToMultipler(match[2]);
+
+  return number * multiplier;
+}
+
+export function timeUnitToMultipler(unit: string): number {
+  switch (unit) {
+    case "ms":
+      return 1;
+    case "s":
+      return 1_000;
+    case "m":
+      return 60_000;
+    case "h":
+      return 360_000;
+    default:
+      return 0;
+  }
+}
+
+function handleError(err: unknown) {
+  console.error(
+    `Error scraping feeds: ${err instanceof Error ? err.message : err}`,
+  );
 }
