@@ -1,4 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
+import { readConfig } from "../config";
+import { getUserByName, User } from "../lib/db/queries/users";
+import { createFeed, Feed, getFeeds } from "../lib/db/queries/feeds";
 
 type RSSFeed = {
   channel: {
@@ -79,4 +82,40 @@ export async function handlerAgg(
   const rssFeed = await fetchFeed(feedURL);
 
   console.log(JSON.stringify(rssFeed, null, 2));
+}
+
+export async function handlerAddFeed(
+  cmdName: string,
+  ...args: string[]
+): Promise<void> {
+  if (args.length !== 2) {
+    throw new Error(`usage: ${cmdName} <name> <url>`);
+  }
+
+  const { currentUserName } = readConfig();
+  const user = await getUserByName(currentUserName);
+  if (!user) {
+    throw new Error(
+      "No user logged in currently. Run 'login' command with user",
+    );
+  }
+
+  const name = args[0];
+  const url = args[1];
+  const feed = await createFeed(name, url, user.id);
+  printFeed(feed, user);
+}
+
+function printFeed(feed: Feed, user: User) {
+  console.log(`Feed: ${JSON.stringify(feed, null, 2)}`);
+  console.log(`User: ${JSON.stringify(user, null, 2)}`);
+}
+
+export async function handlerFeeds(
+  cmdName: string,
+  ...args: string[]
+): Promise<void> {
+  const feeds = await getFeeds();
+
+  console.log(JSON.stringify(feeds, null, 2));
 }

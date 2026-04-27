@@ -3,6 +3,8 @@ import { users } from "../schema";
 import { eq } from "drizzle-orm";
 import { firstOrUndefined } from "./utils";
 
+export type User = typeof users.$inferSelect;
+
 export async function createUser(name: string) {
   const [result] = await db.insert(users).values({ name: name }).returning();
   return result;
