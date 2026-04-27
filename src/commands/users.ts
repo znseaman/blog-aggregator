@@ -4,6 +4,7 @@ import {
   deleteUsers,
   getUserByName,
   getUsers,
+  User,
 } from "../lib/db/queries/users";
 
 export async function handlerLogin(

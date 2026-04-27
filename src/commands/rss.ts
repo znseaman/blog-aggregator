@@ -2,6 +2,7 @@ import { XMLParser } from "fast-xml-parser";
 import { readConfig } from "../config";
 import { getUserByName, User } from "../lib/db/queries/users";
 import { createFeed, Feed, getFeeds } from "../lib/db/queries/feeds";
+import { createFeedFollow } from "../lib/db/queries/feed_follows";
 
 type RSSFeed = {
   channel: {
@@ -86,24 +87,23 @@ export async function handlerAgg(
 
 export async function handlerAddFeed(
   cmdName: string,
+  user: User,
   ...args: string[]
 ): Promise<void> {
   if (args.length !== 2) {
     throw new Error(`usage: ${cmdName} <name> <url>`);
   }
 
-  const { currentUserName } = readConfig();
-  const user = await getUserByName(currentUserName);
-  if (!user) {
-    throw new Error(
-      "No user logged in currently. Run 'login' command with user",
-    );
-  }
-
   const name = args[0];
   const url = args[1];
   const feed = await createFeed(name, url, user.id);
-  printFeed(feed, user);
+
+  // create a feed follow for the user
+  const feedFollow = await createFeedFollow(user.id, feed.id);
+
+  console.log(
+    `${feedFollow.userName} is now following ${feedFollow.feedName}!`,
+  );
 }
 
 function printFeed(feed: Feed, user: User) {

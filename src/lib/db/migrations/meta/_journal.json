@@ -8,6 +8,41 @@
       "when": 1777231728896,
       "tag": "0000_chubby_captain_universe",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777251501471,
+      "tag": "0001_bright_luckman",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777253042588,
+      "tag": "0002_motionless_warbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777253143905,
+      "tag": "0003_windy_boomerang",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777253546992,
+      "tag": "0004_gray_ser_duncan",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777258505769,
+      "tag": "0005_heavy_magus",
+      "breakpoints": true
     }
   ]
 }
