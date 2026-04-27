@@ -240,9 +240,13 @@ export async function handlerBrowse(
   let limit = Number(args[0]) || 2;
   const posts = await getPostsForUser(user.id, limit);
 
-  let postsString = `${user.name}'s latest posts:\n`;
+  let postsString = `Found ${user.name}'s latest posts:\n\n`;
   for (let post of posts) {
-    postsString += `* ${post.publishedAt} - ${post.title} - ${post.description} - ${post.url}`;
+    postsString += `${post.publishedAt} from ${post.feedName}\n`;
+    postsString += `--- ${post.title} ---\n`;
+    postsString += `  ${post.description}\n`;
+    postsString += `Link: ${post.url}\n\n`;
+    postsString += `=============================\n\n`;
   }
 
   console.log(postsString);
