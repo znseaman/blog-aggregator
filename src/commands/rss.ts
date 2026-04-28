@@ -88,7 +88,7 @@ export async function handlerAgg(
   ...args: string[]
 ): Promise<void> {
   if (args.length !== 1) {
-    throw new Error(`usage: ${cmdName} <time_between_reqs>`);
+    throw new Error(`usage: ${cmdName} <timeBetweenRequests>`);
   }
 
   const timeArg = args[0];
